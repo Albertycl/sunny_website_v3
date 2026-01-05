@@ -10,7 +10,8 @@ export default defineConfig(({ mode }) => {
       'process.env.UNSPLASH_SECRET_KEY': JSON.stringify(env.UNSPLASH_SECRET_KEY)
     },
     server: {
-      port: 3000
+      port: 3000,
+      host: true
     },
     build: {
       outDir: 'dist'

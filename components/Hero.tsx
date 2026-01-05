@@ -101,9 +101,14 @@ const Hero: React.FC<HeroProps> = ({ upcomingTour }) => {
           >
             立即下載行程表
           </a>
-          <button className="bg-transparent border-2 border-white/50 text-white px-8 py-3 rounded-full font-bold hover:bg-white/10 transition-all active:scale-95">
+          <a
+            href="https://line.me/ti/p/~@lqa7424m"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-transparent border-2 border-white/50 text-white px-8 py-3 rounded-full font-bold hover:bg-white/10 transition-all active:scale-95"
+          >
             諮詢報名資訊
-          </button>
+          </a>
         </div>
       </div>
 

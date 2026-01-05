@@ -13,24 +13,9 @@ export interface Tour {
   itineraryLink: string;
 }
 
-export interface SocialPost {
-  id: string;
-  platform: 'facebook' | 'youtube' | 'instagram';
-  title: string;
-  content: string;
-  date: string;
-  thumbnail: string;
-  link: string;
-}
 
-export interface Testimonial {
-  id: string;
-  name: string;
-  content: string;
-  tourName: string;
-  rating: number;
-  avatar: string;
-}
+
+
 
 export enum FilterType {
   DEPARTURE_CITY = 'departureCity',

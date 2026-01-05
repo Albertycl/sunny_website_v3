@@ -121,17 +121,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ tours, onUpdateTours, onExit, f
       // 自動尋找真實配圖
       setStatusMsg(`正在尋找 ${extractedData.destination || '目的地'} 的美照...`);
 
-      let finalImage = getDriveThumbnail(urlToUse || '');
+      let finalImage = null;
 
-      if (!finalImage && extractedData.destination) {
+      // 1. 優先嘗試 Unsplash 尋找風景照
+      if (extractedData.destination) {
         const unsplashImage = await fetchUnsplashImage(extractedData.destination);
         if (unsplashImage) {
           finalImage = unsplashImage;
         }
       }
 
+      // 2. (已移除) 不再使用 Google Drive 縮圖作為備案，確保版面不出現文件截圖
+
+      // 3. 最後使用預設風景圖
       if (!finalImage) {
-        finalImage = 'https://placehold.co/600x400';
+        finalImage = '/images/default_scenery.png';
       }
 
       setFormData(prev => ({
@@ -318,7 +322,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ tours, onUpdateTours, onExit, f
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
+                      <div className="flex items-center gap-3 transition-all">
                         <button onClick={() => { setEditingId(tour.id); setFormData(tour); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-3 text-amber-600 hover:bg-amber-50 rounded-xl font-black text-xs">編輯</button>
                         <button onClick={() => { if (confirm("確定刪除？")) onUpdateTours(tours.filter(t => t.id !== tour.id)) }} className="p-3 text-slate-300 hover:text-red-500 rounded-xl font-black text-xs">刪除</button>
                         <button

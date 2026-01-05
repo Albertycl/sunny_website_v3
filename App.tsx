@@ -3,34 +3,55 @@ import React, { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import TourCard from './components/TourCard';
-import SocialFeed from './components/SocialFeed';
-import BlogSection from './components/BlogSection';
-import Testimonials from './components/Testimonials';
+
+
+
 import AdminPanel from './components/AdminPanel';
-import { MOCK_TOURS, MOCK_SOCIAL_POSTS, SUNNY_CONTACTS } from './constants';
-import { Tour, SocialPost } from './types';
-import { fetchLatestSocialFeed } from './services/geminiService';
+import AdminLogin from './components/AdminLogin';
+import { MOCK_TOURS, SUNNY_CONTACTS } from './constants';
+import { Tour } from './types';
+
 
 const App: React.FC = () => {
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminRoute, setIsAdminRoute] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   const [tours, setTours] = useState<Tour[]>([]);
-  const [posts, setPosts] = useState<SocialPost[]>(MOCK_SOCIAL_POSTS);
+
 
   const heroRef = useRef<HTMLDivElement>(null);
   const toursRef = useRef<HTMLDivElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
-  const blogRef = useRef<HTMLDivElement>(null);
+
 
   const [featuredTourId, setFeaturedTourId] = useState<string>('');
 
   useEffect(() => {
+    // Check if we are on the admin route
+    const checkRoute = () => {
+      const path = window.location.pathname;
+      if (path === '/admin') {
+        setIsAdminRoute(true);
+        // Check session storage for persistence if desired, or just rely on state
+        const sessionAuth = sessionStorage.getItem('sunny_admin_auth');
+        if (sessionAuth === 'true') {
+          setIsAuthenticated(true);
+        }
+      } else {
+        setIsAdminRoute(false);
+      }
+    };
+
+    checkRoute();
+    window.addEventListener('popstate', checkRoute);
+
     // Load tours from localStorage or fallback to MOCK_TOURS
-    const savedTours = localStorage.getItem('sunny_tours');
+    const savedTours = localStorage.getItem('sunny_tours_v4');
     if (savedTours) {
       setTours(JSON.parse(savedTours));
     } else {
       setTours(MOCK_TOURS);
-      localStorage.setItem('sunny_tours', JSON.stringify(MOCK_TOURS));
+      localStorage.setItem('sunny_tours_v4', JSON.stringify(MOCK_TOURS));
     }
 
     const savedFeaturedId = localStorage.getItem('sunny_featured_tour_id');
@@ -38,16 +59,18 @@ const App: React.FC = () => {
       setFeaturedTourId(savedFeaturedId);
     }
 
-    const loadFeed = async () => {
-      const dynamicPosts = await fetchLatestSocialFeed() as SocialPost[];
-      setPosts([...dynamicPosts, ...MOCK_SOCIAL_POSTS]);
-    };
-    loadFeed();
+
+
+    return () => window.removeEventListener('popstate', checkRoute);
   }, []);
 
   const handleNavClick = (section: string) => {
-    if (isAdmin) {
-      setIsAdmin(false);
+    // If we are in admin mode/route and click nav, we should probably go back to home?
+    // But since this is a single page app logic for the main site:
+    if (isAdminRoute) {
+      // Go to root
+      window.history.pushState(null, '', '/');
+      setIsAdminRoute(false);
       setTimeout(() => scrollToSection(section), 100);
     } else {
       scrollToSection(section);
@@ -59,14 +82,14 @@ const App: React.FC = () => {
       hero: heroRef,
       tours: toursRef,
       feed: feedRef,
-      blog: blogRef,
+
     };
     refs[section]?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const updateTours = (newTours: Tour[]) => {
     setTours(newTours);
-    localStorage.setItem('sunny_tours', JSON.stringify(newTours));
+    localStorage.setItem('sunny_tours_v4', JSON.stringify(newTours));
   };
 
   const handleSetFeaturedTour = (id: string) => {
@@ -74,12 +97,27 @@ const App: React.FC = () => {
     localStorage.setItem('sunny_featured_tour_id', id);
   };
 
-  if (isAdmin) {
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+    sessionStorage.setItem('sunny_admin_auth', 'true');
+  };
+
+  const handleAdminExit = () => {
+    setIsAdminRoute(false);
+    setIsAuthenticated(false);
+    sessionStorage.removeItem('sunny_admin_auth');
+    window.history.pushState(null, '', '/');
+  };
+
+  if (isAdminRoute) {
+    if (!isAuthenticated) {
+      return <AdminLogin onLogin={handleLogin} />;
+    }
     return (
       <AdminPanel
         tours={tours}
         onUpdateTours={updateTours}
-        onExit={() => setIsAdmin(false)}
+        onExit={handleAdminExit}
         featuredTourId={featuredTourId}
         onSetFeaturedTour={handleSetFeaturedTour}
       />
@@ -92,7 +130,6 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar
         onNavClick={handleNavClick}
-        onAdminClick={() => setIsAdmin(true)}
       />
 
       <main className="flex-grow">
@@ -121,97 +158,95 @@ const App: React.FC = () => {
               ))}
               {tours.length === 0 && (
                 <div className="col-span-full py-20 text-center border-2 border-dashed border-gray-200 rounded-3xl">
-                  <p className="text-gray-400 font-medium">目前沒有行程，請到後台新增。</p>
+                  <p className="text-gray-400 font-medium">目前沒有行程。</p>
                 </div>
               )}
             </div>
           </section>
 
           <section ref={feedRef} className="mt-32">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">社群動態</h2>
-            <p className="text-gray-500 font-medium mb-10">同步 YouTube 與 Facebook 最新貼文。</p>
-            <SocialFeed posts={posts} />
-          </section>
+            <h2 className="text-3xl font-bold text-gray-900 mb-10">如何找到Sunny</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <a
+                href={SUNNY_CONTACTS.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative overflow-hidden bg-white border border-gray-100 rounded-3xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 flex items-center gap-6"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
 
-          <section ref={blogRef} className="mt-32">
-            <BlogSection />
-          </section>
+                <div className="relative w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:rotate-6 transition-transform">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                  </svg>
+                </div>
 
-          <section className="mt-32 py-16 bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-100 rounded-full blur-3xl opacity-20 -mr-32 -mt-32"></div>
-            <div className="relative z-10 px-8">
-              <h2 className="text-3xl font-bold text-center mb-12">為什麼選我們？</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
-                <div>
-                  <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                  </div>
-                  <h4 className="font-bold text-xl mb-3">百威旅行社雙重保障</h4>
-                  <p className="text-gray-500 text-sm leading-relaxed">老牌資深旅行社與網紅領隊強力聯手。</p>
+                <div className="relative z-10">
+                  <h3 className="text-xl font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">Facebook 粉絲專頁</h3>
+                  <p className="text-gray-500 text-sm mb-3">追蹤桑尼的最新帶團動態與旅遊分享</p>
+                  <span className="inline-flex items-center text-blue-600 font-bold text-sm">
+                    立即追蹤 <span className="ml-1 group-hover:translate-x-1 transition-transform">→</span>
+                  </span>
                 </div>
-                <div>
-                  <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                  </div>
-                  <h4 className="font-bold text-xl mb-3">Sunny 親自帶隊</h4>
-                  <p className="text-gray-500 text-sm leading-relaxed">打造最溫馨的旅遊互動體驗。</p>
+              </a>
+
+              <a
+                href={SUNNY_CONTACTS.youtube}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative overflow-hidden bg-white border border-gray-100 rounded-3xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 flex items-center gap-6"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-red-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+
+                <div className="relative w-16 h-16 bg-red-600 text-white rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:rotate-6 transition-transform">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"></path>
+                    <path d="m10 15 5-3-5-3z"></path>
+                  </svg>
                 </div>
-                <div>
-                  <div className="w-16 h-16 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                  </div>
-                  <h4 className="font-bold text-xl mb-3">一站式全方位服務</h4>
-                  <p className="text-gray-500 text-sm leading-relaxed">從證照代辦到機票訂位，一鍵諮詢經紀人。</p>
+
+                <div className="relative z-10">
+                  <h3 className="text-xl font-bold text-gray-900 mb-1 group-hover:text-red-600 transition-colors">YouTube 頻道</h3>
+                  <p className="text-gray-500 text-sm mb-3">觀看桑尼的旅遊 Vlog 與實用攻略</p>
+                  <span className="inline-flex items-center text-red-600 font-bold text-sm">
+                    立即訂閱 <span className="ml-1 group-hover:translate-x-1 transition-transform">→</span>
+                  </span>
                 </div>
-              </div>
+              </a>
             </div>
           </section>
 
-          <section className="mt-32">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2 text-center">旅客真實評價</h2>
-            <Testimonials />
-          </section>
+
+
+
+
+
         </div>
       </main>
 
       <footer className="bg-gray-900 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
             <div>
-              <h3 className="text-2xl font-bold mb-6">Sunny Visit Korea</h3>
-              <button
-                onClick={() => setIsAdmin(true)}
-                className="text-xs text-gray-400 hover:text-amber-500 transition-colors uppercase tracking-widest mt-4 flex items-center gap-2 group"
-              >
-                <svg className="w-4 h-4 transition-transform group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-                行程管理後台
-              </button>
+              <h3 className="text-2xl font-bold mb-6">韓國導遊領隊桑尼Sunny</h3>
             </div>
             <div>
               <h4 className="font-bold mb-6 uppercase tracking-wider text-xs text-amber-500">快速連結</h4>
               <ul className="space-y-4 text-sm text-gray-400">
                 <li className="hover:text-white transition-colors cursor-pointer" onClick={() => handleNavClick('tours')}>最新行程</li>
-                <li className="hover:text-white transition-colors cursor-pointer" onClick={() => handleNavClick('blog')}>旅遊秘笈</li>
-                <li><a href="https://brevet.com.tw/" target="_blank" className="hover:text-white transition-colors">百威旅行社官網</a></li>
+
+
               </ul>
             </div>
             <div>
               <h4 className="font-bold mb-6 uppercase tracking-wider text-xs text-amber-500">聯絡資訊</h4>
               <ul className="space-y-4 text-sm text-gray-400">
                 <li><a href={SUNNY_CONTACTS.managerContact} target="_blank" className="hover:text-white transition-colors">經紀人聯繫</a></li>
-                <li>Line 客服：@sunny_korea</li>
               </ul>
-            </div>
-            <div>
-              <h4 className="font-bold mb-6 uppercase tracking-wider text-xs text-amber-500">訂閱早鳥優惠</h4>
-              <div className="flex gap-2">
-                <input type="email" placeholder="您的 Email" className="bg-gray-800 border-none rounded-lg px-4 py-2 text-sm w-full outline-none focus:ring-1 focus:ring-amber-500" />
-                <button className="bg-amber-500 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-amber-600 transition-colors">訂閱</button>
-              </div>
             </div>
           </div>
           <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500">
-            <p>© 2024 Sunny Visit Korea x 百威旅行社. All Rights Reserved.</p>
+            <p>© 2024 韓國導遊領隊桑尼Sunny. All Rights Reserved.</p>
           </div>
         </div>
       </footer>
