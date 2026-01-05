@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import TourCard from './components/TourCard';
+import WeatherOutfit from './components/WeatherOutfit';
 
 
 
@@ -20,6 +21,7 @@ const App: React.FC = () => {
 
 
   const heroRef = useRef<HTMLDivElement>(null);
+  const servicesRef = useRef<HTMLDivElement>(null);
   const toursRef = useRef<HTMLDivElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
 
@@ -80,6 +82,7 @@ const App: React.FC = () => {
   const scrollToSection = (section: string) => {
     const refs: Record<string, React.RefObject<HTMLDivElement | null>> = {
       hero: heroRef,
+      services: servicesRef,
       tours: toursRef,
       feed: feedRef,
 
@@ -139,6 +142,38 @@ const App: React.FC = () => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
+          <section className="mt-8 mb-24">
+            <WeatherOutfit />
+          </section>
+          <section ref={servicesRef} className="mb-24 mt-12">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">服務內容與流程</h2>
+              <p className="mt-4 text-xl text-gray-500">Sunny 團隊提供全方位的韓國旅遊服務</p>
+            </div>
+
+            {/* Row 1: Vertical Images Side-by-Side */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+              <div className="rounded-3xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+                <img src="/images/services/team.jpg" alt="專業團隊介紹" className="w-full h-auto object-cover" />
+              </div>
+
+              <div className="rounded-3xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+                <img src="/images/services/overview.jpg" alt="旅遊方案全攻略" className="w-full h-auto object-cover" />
+              </div>
+            </div>
+
+            {/* Row 2 & 3: Horizontal Images Stacked */}
+            <div className="flex flex-col gap-8">
+              <div className="rounded-3xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+                <img src="/images/services/custom.jpg" alt="客製化包團說明" className="w-full h-auto object-cover" />
+              </div>
+
+              <div className="rounded-3xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+                <img src="/images/services/inquiry.jpg" alt="機加酒詢價流程" className="w-full h-auto object-cover" />
+              </div>
+            </div>
+          </section>
+
           <section ref={toursRef} className="mt-12">
             <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
               <div>
@@ -163,6 +198,8 @@ const App: React.FC = () => {
               )}
             </div>
           </section>
+
+
 
           <section ref={feedRef} className="mt-32">
             <h2 className="text-3xl font-bold text-gray-900 mb-10">如何找到Sunny</h2>
@@ -233,6 +270,7 @@ const App: React.FC = () => {
             <div>
               <h4 className="font-bold mb-6 uppercase tracking-wider text-xs text-amber-500">快速連結</h4>
               <ul className="space-y-4 text-sm text-gray-400">
+                <li className="hover:text-white transition-colors cursor-pointer" onClick={() => handleNavClick('services')}>服務介紹</li>
                 <li className="hover:text-white transition-colors cursor-pointer" onClick={() => handleNavClick('tours')}>最新行程</li>
 
 
