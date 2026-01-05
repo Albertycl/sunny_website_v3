@@ -2,7 +2,13 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 // Fix: Always use process.env.API_KEY directly as per guidelines
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const apiKey = process.env.API_KEY;
+
+if (!apiKey) {
+  console.warn("Gemini API Key is missing! AI features will not work. Please check your Zeabur environment variables and redeploy.");
+}
+
+const ai = new GoogleGenAI({ apiKey: apiKey || "" });
 
 /**
  * Since we don't have direct real-time backend scrapers in a pure frontend demo,

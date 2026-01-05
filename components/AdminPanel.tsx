@@ -72,7 +72,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ tours, onUpdateTours, onExit, f
     setPreviewError(false);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const apiKey = process.env.API_KEY;
+      if (!apiKey) {
+        alert("未偵測到 API Key。請確認 Zeabur 環境變數已設定，並重新部署網站。");
+        setIsLoading(false);
+        return;
+      }
+      const ai = new GoogleGenAI({ apiKey });
       let extractedData: any = {};
 
       const promptText = `
