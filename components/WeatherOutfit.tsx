@@ -18,6 +18,12 @@ const CITIES: City[] = [
 type WeatherData = {
     temperature: number;
     weatherCode: number;
+    isHistorical?: boolean;
+    date?: string;
+};
+
+const formatDate = (date: Date): string => {
+    return date.toISOString().split('T')[0];
 };
 
 const WeatherOutfit: React.FC = () => {
@@ -25,12 +31,18 @@ const WeatherOutfit: React.FC = () => {
     const [weather, setWeather] = useState<WeatherData | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [selectedDate, setSelectedDate] = useState<string>('');
+    const [isCurrentWeather, setIsCurrentWeather] = useState(true);
 
     useEffect(() => {
-        fetchWeather(selectedCity);
-    }, [selectedCity]);
+        if (isCurrentWeather) {
+            fetchCurrentWeather(selectedCity);
+        } else if (selectedDate) {
+            fetchWeatherByDate(selectedCity, selectedDate);
+        }
+    }, [selectedCity, selectedDate, isCurrentWeather]);
 
-    const fetchWeather = async (city: City) => {
+    const fetchCurrentWeather = async (city: City) => {
         setLoading(true);
         setError(null);
         try {
@@ -42,6 +54,59 @@ const WeatherOutfit: React.FC = () => {
             setWeather({
                 temperature: data.current_weather.temperature,
                 weatherCode: data.current_weather.weathercode,
+            });
+        } catch (err) {
+            setError('無法取得天氣資訊，請稍後再試。');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchWeatherByDate = async (city: City, dateStr: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const targetDate = new Date(dateStr);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const daysDiff = Math.ceil((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+            let apiUrl: string;
+            let isHistorical = false;
+            let actualDate = dateStr;
+
+            if (daysDiff <= 16 && daysDiff >= 0) {
+                // Within forecast range - use forecast API
+                apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&daily=temperature_2m_max,temperature_2m_min,weather_code&start_date=${dateStr}&end_date=${dateStr}&timezone=Asia/Seoul`;
+            } else if (daysDiff < 0) {
+                // Past date - use archive API
+                apiUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${city.lat}&longitude=${city.lon}&daily=temperature_2m_max,temperature_2m_min,weather_code&start_date=${dateStr}&end_date=${dateStr}&timezone=Asia/Seoul`;
+                isHistorical = true;
+            } else {
+                // Beyond forecast range - use last year's data
+                const lastYearDate = new Date(targetDate);
+                lastYearDate.setFullYear(lastYearDate.getFullYear() - 1);
+                actualDate = formatDate(lastYearDate);
+                apiUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${city.lat}&longitude=${city.lon}&daily=temperature_2m_max,temperature_2m_min,weather_code&start_date=${actualDate}&end_date=${actualDate}&timezone=Asia/Seoul`;
+                isHistorical = true;
+            }
+
+            const response = await fetch(apiUrl);
+            if (!response.ok) throw new Error('Failed to fetch weather data');
+            const data = await response.json();
+
+            if (!data.daily || !data.daily.temperature_2m_max || data.daily.temperature_2m_max.length === 0) {
+                throw new Error('No weather data available');
+            }
+
+            const avgTemp = (data.daily.temperature_2m_max[0] + data.daily.temperature_2m_min[0]) / 2;
+
+            setWeather({
+                temperature: Math.round(avgTemp * 10) / 10,
+                weatherCode: data.daily.weather_code[0],
+                isHistorical,
+                date: dateStr,
             });
         } catch (err) {
             setError('無法取得天氣資訊，請稍後再試。');
@@ -100,7 +165,7 @@ const WeatherOutfit: React.FC = () => {
 
             <div className="p-6 md:p-8">
                 {/* City Selection */}
-                <div className="flex justify-center mb-8">
+                <div className="flex justify-center mb-6">
                     <div className="inline-flex bg-gray-100 rounded-full p-1 gap-1 flex-wrap justify-center">
                         {CITIES.map(city => (
                             <button
@@ -117,6 +182,41 @@ const WeatherOutfit: React.FC = () => {
                     </div>
                 </div>
 
+                {/* Date Selection */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+                    <div className="inline-flex bg-gray-100 rounded-full p-1">
+                        <button
+                            onClick={() => { setIsCurrentWeather(true); setSelectedDate(''); }}
+                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${isCurrentWeather
+                                    ? 'bg-white text-blue-600 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-900'
+                                }`}
+                        >
+                            目前天氣
+                        </button>
+                        <button
+                            onClick={() => setIsCurrentWeather(false)}
+                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${!isCurrentWeather
+                                    ? 'bg-white text-blue-600 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-900'
+                                }`}
+                        >
+                            查詢日期
+                        </button>
+                    </div>
+
+                    {!isCurrentWeather && (
+                        <input
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            className="px-4 py-2 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            min={formatDate(new Date(new Date().setFullYear(new Date().getFullYear() - 1)))}
+                            max={formatDate(new Date(new Date().setFullYear(new Date().getFullYear() + 1)))}
+                        />
+                    )}
+                </div>
+
                 {loading ? (
                     <div className="text-center py-10">
                         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -126,23 +226,34 @@ const WeatherOutfit: React.FC = () => {
                     <div className="text-center py-10 text-red-500">
                         {error}
                         <button
-                            onClick={() => fetchWeather(selectedCity)}
+                            onClick={() => isCurrentWeather ? fetchCurrentWeather(selectedCity) : fetchWeatherByDate(selectedCity, selectedDate)}
                             className="block mx-auto mt-4 text-blue-600 underline text-sm"
                         >
                             重試
                         </button>
                     </div>
+                ) : !isCurrentWeather && !selectedDate ? (
+                    <div className="text-center py-10 text-gray-500">
+                        請選擇日期查詢天氣
+                    </div>
                 ) : weather && (
                     <div className="animate-fade-in md:flex items-center justify-between gap-8 md:px-8">
                         {/* Weather Info */}
                         <div className="text-center md:text-left mb-6 md:mb-0 md:w-1/3 border-b md:border-b-0 md:border-r border-gray-100 pb-6 md:pb-0 md:pr-6">
-                            <p className="text-gray-500 font-medium mb-1">{selectedCity.nameZh} 目前天氣</p>
+                            <p className="text-gray-500 font-medium mb-1">
+                                {selectedCity.nameZh} {isCurrentWeather ? '目前天氣' : weather.date}
+                            </p>
                             <div className="flex items-center justify-center md:justify-start gap-3">
                                 <span className="text-5xl font-bold text-gray-900">{weather.temperature}°C</span>
                                 <span className="text-lg bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-medium">
                                     {getWeatherDescription(weather.weatherCode)}
                                 </span>
                             </div>
+                            {weather.isHistorical && (
+                                <p className="text-xs text-amber-600 mt-2">
+                                    * 此為去年同期參考資料
+                                </p>
+                            )}
                         </div>
 
                         {/* Outfit Advice */}

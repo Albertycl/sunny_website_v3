@@ -34,4 +34,46 @@ export const getSunnyInsights = async (topic: string) => {
   }
 };
 
+// Unsplash API key
+const UNSPLASH_ACCESS_KEY = "jQXrqVPUPOaDRUabHgA7ox6HtlQAIn0yyZ5jkDDmAhI";
+
+/**
+ * Search for images on Unsplash based on destination/query
+ */
+export const searchUnsplashImages = async (query: string, count: number = 6): Promise<Array<{
+  id: string;
+  url: string;
+  thumbUrl: string;
+  alt: string;
+  photographer: string;
+}>> => {
+  try {
+    const response = await fetch(
+      `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query + " travel")}&per_page=${count}&orientation=landscape`,
+      {
+        headers: {
+          Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Unsplash API error");
+    }
+
+    const data = await response.json();
+
+    return data.results.map((photo: any) => ({
+      id: photo.id,
+      url: photo.urls.regular,
+      thumbUrl: photo.urls.small,
+      alt: photo.alt_description || query,
+      photographer: photo.user.name
+    }));
+  } catch (error) {
+    console.error("Unsplash search error:", error);
+    return [];
+  }
+};
+
 

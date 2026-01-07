@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
 import { Tour, BlogPost, Testimonial, WhyChooseUsItem } from '../types';
+import { searchUnsplashImages } from '../services/geminiService';
+
+type UnsplashImage = {
+  id: string;
+  url: string;
+  thumbUrl: string;
+  alt: string;
+  photographer: string;
+};
 
 interface AdminPanelProps {
   tours: Tour[];
@@ -31,6 +40,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   const [tourForm, setTourForm] = useState<Partial<Tour>>({
     title: '', destination: '', departureCity: '桃園', departureDate: '', description: '', image: '', itineraryLink: '', status: 'upcoming'
   });
+
+  // Unsplash image search state
+  const [searchingImages, setSearchingImages] = useState(false);
+  const [unsplashImages, setUnsplashImages] = useState<UnsplashImage[]>([]);
+  const [showImagePicker, setShowImagePicker] = useState(false);
 
   // Blog form state
   const [blogEditingId, setBlogEditingId] = useState<string | null>(null);
@@ -66,6 +80,48 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   const resetTourForm = () => {
     setTourEditingId(null);
     setTourForm({ title: '', destination: '', departureCity: '桃園', departureDate: '', description: '', image: '', itineraryLink: '', status: 'upcoming' });
+    setShowImagePicker(false);
+    setUnsplashImages([]);
+  };
+
+  // Unsplash search handlers
+  const handleSearchImages = async (query?: string) => {
+    const searchQuery = query || tourForm.destination;
+    if (!searchQuery) return;
+
+    setSearchingImages(true);
+    setShowImagePicker(true);
+    try {
+      const images = await searchUnsplashImages(searchQuery);
+      setUnsplashImages(images);
+    } catch (error) {
+      console.error("Failed to search images:", error);
+    } finally {
+      setSearchingImages(false);
+    }
+  };
+
+  const selectImage = (url: string) => {
+    setTourForm({ ...tourForm, image: url });
+    setShowImagePicker(false);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('圖片大小不能超過 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setTourForm({ ...tourForm, image: base64 });
+    };
+    reader.readAsDataURL(file);
   };
 
   // Blog handlers
@@ -187,10 +243,101 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                       </div>
                     </div>
                     <div>
-                      <label className={labelClass}>圖片連結 (URL)</label>
-                      <input type="url" placeholder="請輸入圖片網址..." className={inputClass} value={tourForm.image} onChange={e => setTourForm({ ...tourForm, image: e.target.value })} />
-                      {tourForm.image && <div className="mt-4 aspect-[16/10] rounded-xl overflow-hidden bg-slate-100"><img src={tourForm.image} alt="Preview" className="w-full h-full object-cover" onError={(e) => e.currentTarget.style.display = 'none'} /></div>}
+                      <label className={labelClass}>圖片</label>
+                      <div className="flex gap-2 mb-3">
+                        <input
+                          type="url"
+                          placeholder="輸入圖片網址..."
+                          className={`${inputClass} flex-1`}
+                          value={tourForm.image?.startsWith('data:') ? '' : tourForm.image}
+                          onChange={e => setTourForm({ ...tourForm, image: e.target.value })}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleSearchImages()}
+                          disabled={!tourForm.destination || searchingImages}
+                          className="px-4 bg-amber-500 text-white rounded-2xl font-black text-sm hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap"
+                        >
+                          {searchingImages ? '...' : '搜尋'}
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <label className="flex-1 cursor-pointer">
+                          <div className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl p-4 transition-all">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span className="font-bold text-sm">上傳圖片</span>
+                          </div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                        </label>
+                        {tourForm.image && (
+                          <button
+                            type="button"
+                            onClick={() => setTourForm({ ...tourForm, image: '' })}
+                            className="px-4 py-4 text-slate-400 hover:text-red-500 rounded-2xl font-bold text-sm transition-all"
+                          >
+                            清除
+                          </button>
+                        )}
+                      </div>
+                      {tourForm.image && (
+                        <div className="mt-4 aspect-[16/10] rounded-xl overflow-hidden bg-slate-100 relative">
+                          <img src={tourForm.image} alt="Preview" className="w-full h-full object-cover" onError={(e) => e.currentTarget.style.display = 'none'} />
+                          {tourForm.image.startsWith('data:') && (
+                            <span className="absolute top-2 right-2 bg-black/50 text-white text-[10px] px-2 py-1 rounded-lg font-bold">已上傳</span>
+                          )}
+                        </div>
+                      )}
                     </div>
+                    {/* Unsplash Image Picker */}
+                    {showImagePicker && (
+                      <div className="bg-slate-50 rounded-2xl p-6 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-black text-sm text-slate-700">選擇圖片 (Unsplash)</h4>
+                          <button
+                            type="button"
+                            onClick={() => setShowImagePicker(false)}
+                            className="text-slate-400 hover:text-slate-600 text-sm"
+                          >
+                            關閉
+                          </button>
+                        </div>
+                        {searchingImages ? (
+                          <div className="flex items-center justify-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+                            <span className="ml-3 text-slate-500 font-medium">搜尋圖片中...</span>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-3 gap-3">
+                            {unsplashImages.map((img) => (
+                              <button
+                                key={img.id}
+                                type="button"
+                                onClick={() => selectImage(img.url)}
+                                className="aspect-video rounded-xl overflow-hidden border-2 border-transparent hover:border-amber-500 transition-all focus:outline-none focus:border-amber-500"
+                              >
+                                <img
+                                  src={img.thumbUrl}
+                                  alt={img.alt}
+                                  className="w-full h-full object-cover"
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {unsplashImages.length > 0 && !searchingImages && (
+                          <p className="text-[10px] text-slate-400 text-center">
+                            Photos from Unsplash
+                          </p>
+                        )}
+                      </div>
+                    )}
                     <div>
                       <label className={labelClass}>行程 PDF/文件連結</label>
                       <input type="url" placeholder="請輸入 Google Drive 或其他連結..." className={inputClass} value={tourForm.itineraryLink} onChange={e => setTourForm({ ...tourForm, itineraryLink: e.target.value })} />
