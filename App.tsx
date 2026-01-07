@@ -1,9 +1,10 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import TourCard from './components/TourCard';
 import WeatherOutfit from './components/WeatherOutfit';
+import FilterBar from './components/FilterBar';
 
 
 
@@ -18,7 +19,11 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const [tours, setTours] = useState<Tour[]>([]);
-
+  const [filters, setFilters] = useState({
+    departureCity: '',
+    destination: '',
+    month: ''
+  });
 
   const heroRef = useRef<HTMLDivElement>(null);
   const servicesRef = useRef<HTMLDivElement>(null);
@@ -112,6 +117,32 @@ const App: React.FC = () => {
     window.history.pushState(null, '', '/');
   };
 
+  const handleFilterChange = (type: string, value: string) => {
+    setFilters(prev => ({ ...prev, [type]: value }));
+  };
+
+  const filteredTours = useMemo(() => {
+    return tours.filter(tour => {
+      // Filter by departure city
+      if (filters.departureCity && tour.departureCity !== filters.departureCity) {
+        return false;
+      }
+      // Filter by destination (partial match)
+      if (filters.destination && !tour.destination.includes(filters.destination)) {
+        return false;
+      }
+      // Filter by month
+      if (filters.month) {
+        const tourMonth = new Date(tour.departureDate).getMonth() + 1;
+        const filterMonth = parseInt(filters.month.replace('月', ''), 10);
+        if (tourMonth !== filterMonth) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [tours, filters]);
+
   if (isAdminRoute) {
     if (!isAuthenticated) {
       return <AdminLogin onLogin={handleLogin} />;
@@ -151,31 +182,21 @@ const App: React.FC = () => {
               <p className="mt-4 text-xl text-gray-500">Sunny 團隊提供全方位的韓國旅遊服務</p>
             </div>
 
-            {/* Row 1: Vertical Images Side-by-Side */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-              <div className="rounded-3xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-                <img src="/images/services/team.jpg" alt="專業團隊介紹" className="w-full h-auto object-cover" />
-              </div>
-
-              <div className="rounded-3xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-                <img src="/images/services/overview.jpg" alt="旅遊方案全攻略" className="w-full h-auto object-cover" />
-              </div>
+            <div className="rounded-3xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+              <img src="/images/services/services_overview.png" alt="SUNNY帶你玩韓國：旅遊方案全攻略" className="w-full h-auto object-cover" />
             </div>
 
-            {/* Row 2 & 3: Horizontal Images Stacked */}
-            <div className="flex flex-col gap-8">
-              <div className="rounded-3xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-                <img src="/images/services/custom.jpg" alt="客製化包團說明" className="w-full h-auto object-cover" />
-              </div>
+            <div className="rounded-3xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300 mt-8">
+              <img src="/images/services/custom_tour.jpg" alt="客製化團體說明" className="w-full h-auto object-cover" />
+            </div>
 
-              <div className="rounded-3xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-                <img src="/images/services/inquiry.jpg" alt="機加酒詢價流程" className="w-full h-auto object-cover" />
-              </div>
+            <div className="rounded-3xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300 mt-8">
+              <img src="/images/services/flight_hotel.jpg" alt="韓國機加酒自由行：詢價前置作業" className="w-full h-auto object-cover" />
             </div>
           </section>
 
           <section ref={toursRef} className="mt-12">
-            <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
               <div>
                 <h2 className="text-4xl font-extrabold text-gray-900 mb-3 tracking-tight">近期帶隊行程</h2>
                 <p className="text-gray-500 font-medium text-lg">Sunny 親自踩點、嚴選高品質路線。</p>
@@ -187,13 +208,20 @@ const App: React.FC = () => {
               </div>
             </div>
 
+            <div className="mb-10">
+              <FilterBar
+                onFilterChange={handleFilterChange}
+                currentFilters={filters}
+              />
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-              {tours.map(tour => (
+              {filteredTours.map(tour => (
                 <TourCard key={tour.id} tour={tour} />
               ))}
-              {tours.length === 0 && (
+              {filteredTours.length === 0 && (
                 <div className="col-span-full py-20 text-center border-2 border-dashed border-gray-200 rounded-3xl">
-                  <p className="text-gray-400 font-medium">目前沒有行程。</p>
+                  <p className="text-gray-400 font-medium">目前沒有符合條件的行程。</p>
                 </div>
               )}
             </div>

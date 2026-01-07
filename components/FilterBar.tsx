@@ -12,11 +12,11 @@ interface FilterBarProps {
 
 const FilterBar: React.FC<FilterBarProps> = ({ onFilterChange, currentFilters }) => {
   const cities = ['全部城市', '桃園', '台中', '高雄'];
-  const destinations = ['全部目的地', '韓國', '埃及', '土耳其', '日本', '東南亞'];
+  const destinations = ['全部目的地', '濟州島', '釜山', '首爾', '大邱', '浦項'];
   const months = ['全部月份', '01月', '02月', '03月', '04月', '05月', '06月', '07月', '08月', '09月', '10月', '11月', '12月'];
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-xl -mt-12 relative z-30 max-w-5xl mx-auto border border-gray-100 grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+    <div className="bg-white p-6 rounded-2xl shadow-lg relative z-30 max-w-5xl mx-auto border border-gray-100 grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
       <div>
         <label className="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wider">出發城市</label>
         <select 
