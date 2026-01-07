@@ -57,8 +57,8 @@ export const MOCK_WHY_CHOOSE_US: WhyChooseUsItem[] = [
   },
   {
     id: 'why-2',
-    title: '百威旅行社保障',
-    description: '與老牌旅行社合作，行程安全有保障，讓您安心出遊無後顧之憂。',
+    title: '專業旅行社保障',
+    description: '與合法旅行社合作，行程安全有保障，讓您安心出遊無後顧之憂。',
     icon: 'company'
   },
   {
