@@ -13,6 +13,12 @@ import AdminPanel from './components/AdminPanel';
 import AdminLogin from './components/AdminLogin';
 import { MOCK_TOURS, MOCK_BLOG_POSTS, MOCK_TESTIMONIALS, MOCK_WHY_CHOOSE_US, SUNNY_CONTACTS } from './constants';
 import { Tour, BlogPost, Testimonial, WhyChooseUsItem } from './types';
+import {
+  getTours, saveTours,
+  getBlogPosts, saveBlogPosts,
+  getTestimonials, saveTestimonials,
+  getWhyChooseUs, saveWhyChooseUs
+} from './services/supabaseService';
 
 
 const App: React.FC = () => {
@@ -58,48 +64,52 @@ const App: React.FC = () => {
     checkRoute();
     window.addEventListener('popstate', checkRoute);
 
-    // Load tours from localStorage or fallback to MOCK_TOURS
-    const savedTours = localStorage.getItem('sunny_tours_v4');
-    if (savedTours) {
-      setTours(JSON.parse(savedTours));
-    } else {
-      setTours(MOCK_TOURS);
-      localStorage.setItem('sunny_tours_v4', JSON.stringify(MOCK_TOURS));
-    }
+    // Load data from Supabase
+    const loadData = async () => {
+      // Load tours
+      const dbTours = await getTours();
+      if (dbTours.length > 0) {
+        setTours(dbTours);
+      } else {
+        setTours(MOCK_TOURS);
+        // Initialize database with mock data
+        await saveTours(MOCK_TOURS);
+      }
 
-    // Load blog posts
-    const savedBlogPosts = localStorage.getItem('sunny_blog_posts');
-    if (savedBlogPosts) {
-      setBlogPosts(JSON.parse(savedBlogPosts));
-    } else {
-      setBlogPosts(MOCK_BLOG_POSTS);
-      localStorage.setItem('sunny_blog_posts', JSON.stringify(MOCK_BLOG_POSTS));
-    }
+      // Load blog posts
+      const dbBlogPosts = await getBlogPosts();
+      if (dbBlogPosts.length > 0) {
+        setBlogPosts(dbBlogPosts);
+      } else {
+        setBlogPosts(MOCK_BLOG_POSTS);
+        await saveBlogPosts(MOCK_BLOG_POSTS);
+      }
 
-    // Load testimonials
-    const savedTestimonials = localStorage.getItem('sunny_testimonials');
-    if (savedTestimonials) {
-      setTestimonials(JSON.parse(savedTestimonials));
-    } else {
-      setTestimonials(MOCK_TESTIMONIALS);
-      localStorage.setItem('sunny_testimonials', JSON.stringify(MOCK_TESTIMONIALS));
-    }
+      // Load testimonials
+      const dbTestimonials = await getTestimonials();
+      if (dbTestimonials.length > 0) {
+        setTestimonials(dbTestimonials);
+      } else {
+        setTestimonials(MOCK_TESTIMONIALS);
+        await saveTestimonials(MOCK_TESTIMONIALS);
+      }
 
-    // Load why choose us
-    const savedWhyChooseUs = localStorage.getItem('sunny_why_choose_us');
-    if (savedWhyChooseUs) {
-      setWhyChooseUs(JSON.parse(savedWhyChooseUs));
-    } else {
-      setWhyChooseUs(MOCK_WHY_CHOOSE_US);
-      localStorage.setItem('sunny_why_choose_us', JSON.stringify(MOCK_WHY_CHOOSE_US));
-    }
+      // Load why choose us
+      const dbWhyChooseUs = await getWhyChooseUs();
+      if (dbWhyChooseUs.length > 0) {
+        setWhyChooseUs(dbWhyChooseUs);
+      } else {
+        setWhyChooseUs(MOCK_WHY_CHOOSE_US);
+        await saveWhyChooseUs(MOCK_WHY_CHOOSE_US);
+      }
+    };
+
+    loadData();
 
     const savedFeaturedId = localStorage.getItem('sunny_featured_tour_id');
     if (savedFeaturedId) {
       setFeaturedTourId(savedFeaturedId);
     }
-
-
 
     return () => window.removeEventListener('popstate', checkRoute);
   }, []);
@@ -129,24 +139,24 @@ const App: React.FC = () => {
     refs[section]?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const updateTours = (newTours: Tour[]) => {
+  const updateTours = async (newTours: Tour[]) => {
     setTours(newTours);
-    localStorage.setItem('sunny_tours_v4', JSON.stringify(newTours));
+    await saveTours(newTours);
   };
 
-  const updateBlogPosts = (newPosts: BlogPost[]) => {
+  const updateBlogPosts = async (newPosts: BlogPost[]) => {
     setBlogPosts(newPosts);
-    localStorage.setItem('sunny_blog_posts', JSON.stringify(newPosts));
+    await saveBlogPosts(newPosts);
   };
 
-  const updateTestimonials = (newTestimonials: Testimonial[]) => {
+  const updateTestimonials = async (newTestimonials: Testimonial[]) => {
     setTestimonials(newTestimonials);
-    localStorage.setItem('sunny_testimonials', JSON.stringify(newTestimonials));
+    await saveTestimonials(newTestimonials);
   };
 
-  const updateWhyChooseUs = (newItems: WhyChooseUsItem[]) => {
+  const updateWhyChooseUs = async (newItems: WhyChooseUsItem[]) => {
     setWhyChooseUs(newItems);
-    localStorage.setItem('sunny_why_choose_us', JSON.stringify(newItems));
+    await saveWhyChooseUs(newItems);
   };
 
   const handleSetFeaturedTour = (id: string) => {
