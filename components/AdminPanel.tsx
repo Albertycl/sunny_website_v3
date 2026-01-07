@@ -1,52 +1,136 @@
-
 import React, { useState } from 'react';
-import { Tour } from '../types';
+import { Tour, BlogPost, Testimonial, WhyChooseUsItem } from '../types';
 
 interface AdminPanelProps {
   tours: Tour[];
   onUpdateTours: (tours: Tour[]) => void;
+  blogPosts: BlogPost[];
+  onUpdateBlogPosts: (posts: BlogPost[]) => void;
+  testimonials: Testimonial[];
+  onUpdateTestimonials: (testimonials: Testimonial[]) => void;
+  whyChooseUs: WhyChooseUsItem[];
+  onUpdateWhyChooseUs: (items: WhyChooseUsItem[]) => void;
   onExit: () => void;
   featuredTourId: string;
   onSetFeaturedTour: (id: string) => void;
 }
 
-const AdminPanel: React.FC<AdminPanelProps> = ({ tours, onUpdateTours, onExit, featuredTourId, onSetFeaturedTour }) => {
-  const [editingId, setEditingId] = useState<string | null>(null);
+type TabType = 'tours' | 'blog' | 'testimonials' | 'whyChooseUs';
 
-  const [formData, setFormData] = useState<Partial<Tour>>({
-    title: '',
-    destination: '',
-    departureCity: '桃園',
-    departureDate: '',
-    description: '',
-    image: '',
-    itineraryLink: '',
-    status: 'upcoming'
+const AdminPanel: React.FC<AdminPanelProps> = ({
+  tours, onUpdateTours,
+  blogPosts, onUpdateBlogPosts,
+  testimonials, onUpdateTestimonials,
+  whyChooseUs, onUpdateWhyChooseUs,
+  onExit, featuredTourId, onSetFeaturedTour
+}) => {
+  const [activeTab, setActiveTab] = useState<TabType>('tours');
+
+  // Tour form state
+  const [tourEditingId, setTourEditingId] = useState<string | null>(null);
+  const [tourForm, setTourForm] = useState<Partial<Tour>>({
+    title: '', destination: '', departureCity: '桃園', departureDate: '', description: '', image: '', itineraryLink: '', status: 'upcoming'
   });
 
-  const handleSave = (e: React.FormEvent) => {
+  // Blog form state
+  const [blogEditingId, setBlogEditingId] = useState<string | null>(null);
+  const [blogForm, setBlogForm] = useState<Partial<BlogPost>>({
+    title: '', content: '', category: '行李攻略', image: '', publishDate: new Date().toISOString().split('T')[0]
+  });
+
+  // Testimonial form state
+  const [testimonialEditingId, setTestimonialEditingId] = useState<string | null>(null);
+  const [testimonialForm, setTestimonialForm] = useState<Partial<Testimonial>>({
+    name: '', tourName: '', quote: '', image: '', rating: 5
+  });
+
+  // Why Choose Us form state
+  const [whyEditingId, setWhyEditingId] = useState<string | null>(null);
+  const [whyForm, setWhyForm] = useState<Partial<WhyChooseUsItem>>({
+    title: '', description: '', icon: 'leader'
+  });
+
+  // Tour handlers
+  const handleSaveTour = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title || !formData.destination) return alert("請填寫完整資訊 (標題與目的地為必填)");
-
-    const tourToSave = {
-      ...formData,
-      id: editingId || `tour-${Date.now()}`,
-      isFull: false,
-      status: 'upcoming'
-    } as Tour;
-
-    if (editingId) {
-      onUpdateTours(tours.map(t => t.id === editingId ? tourToSave : t));
+    if (!tourForm.title || !tourForm.destination) return alert("請填寫完整資訊 (標題與目的地為必填)");
+    const tourToSave = { ...tourForm, id: tourEditingId || `tour-${Date.now()}`, isFull: false, status: 'upcoming' } as Tour;
+    if (tourEditingId) {
+      onUpdateTours(tours.map(t => t.id === tourEditingId ? tourToSave : t));
     } else {
       onUpdateTours([tourToSave, ...tours]);
     }
-    resetForm();
+    resetTourForm();
   };
 
-  const resetForm = () => {
-    setEditingId(null);
-    setFormData({ title: '', destination: '', departureCity: '桃園', departureDate: '', description: '', image: '', itineraryLink: '', status: 'upcoming' });
+  const resetTourForm = () => {
+    setTourEditingId(null);
+    setTourForm({ title: '', destination: '', departureCity: '桃園', departureDate: '', description: '', image: '', itineraryLink: '', status: 'upcoming' });
   };
+
+  // Blog handlers
+  const handleSaveBlog = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!blogForm.title || !blogForm.content) return alert("請填寫標題和內容");
+    const postToSave = { ...blogForm, id: blogEditingId || `blog-${Date.now()}` } as BlogPost;
+    if (blogEditingId) {
+      onUpdateBlogPosts(blogPosts.map(p => p.id === blogEditingId ? postToSave : p));
+    } else {
+      onUpdateBlogPosts([postToSave, ...blogPosts]);
+    }
+    resetBlogForm();
+  };
+
+  const resetBlogForm = () => {
+    setBlogEditingId(null);
+    setBlogForm({ title: '', content: '', category: '行李攻略', image: '', publishDate: new Date().toISOString().split('T')[0] });
+  };
+
+  // Testimonial handlers
+  const handleSaveTestimonial = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!testimonialForm.name || !testimonialForm.quote) return alert("請填寫姓名和評價內容");
+    const testimonialToSave = { ...testimonialForm, id: testimonialEditingId || `testimonial-${Date.now()}` } as Testimonial;
+    if (testimonialEditingId) {
+      onUpdateTestimonials(testimonials.map(t => t.id === testimonialEditingId ? testimonialToSave : t));
+    } else {
+      onUpdateTestimonials([testimonialToSave, ...testimonials]);
+    }
+    resetTestimonialForm();
+  };
+
+  const resetTestimonialForm = () => {
+    setTestimonialEditingId(null);
+    setTestimonialForm({ name: '', tourName: '', quote: '', image: '', rating: 5 });
+  };
+
+  // Why Choose Us handlers
+  const handleSaveWhy = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!whyForm.title || !whyForm.description) return alert("請填寫標題和說明");
+    const itemToSave = { ...whyForm, id: whyEditingId || `why-${Date.now()}` } as WhyChooseUsItem;
+    if (whyEditingId) {
+      onUpdateWhyChooseUs(whyChooseUs.map(w => w.id === whyEditingId ? itemToSave : w));
+    } else {
+      onUpdateWhyChooseUs([itemToSave, ...whyChooseUs]);
+    }
+    resetWhyForm();
+  };
+
+  const resetWhyForm = () => {
+    setWhyEditingId(null);
+    setWhyForm({ title: '', description: '', icon: 'leader' });
+  };
+
+  const tabs = [
+    { id: 'tours' as TabType, label: '行程管理', icon: '✈️' },
+    { id: 'blog' as TabType, label: '部落格文章', icon: '📝' },
+    { id: 'testimonials' as TabType, label: '旅客評價', icon: '⭐' },
+    { id: 'whyChooseUs' as TabType, label: '關於我們', icon: '💎' },
+  ];
+
+  const inputClass = "w-full bg-slate-50 border-none rounded-2xl p-5 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-amber-400";
+  const labelClass = "block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest";
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col lg:flex-row font-sans text-slate-900">
@@ -56,149 +140,300 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ tours, onUpdateTours, onExit, f
           <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center font-black text-white text-xl shadow-lg">S</div>
           <h1 className="text-xl font-black tracking-tight">Sunny Admin</h1>
         </div>
-        <nav className="space-y-4">
-          <button className="w-full text-left px-5 py-4 bg-amber-500 text-white rounded-2xl font-black shadow-xl transition-all">行程管理</button>
-          <button onClick={onExit} className="w-full text-left px-5 py-4 text-slate-400 hover:text-white rounded-2xl transition-all font-bold">返回首頁</button>
+        <nav className="space-y-2">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`w-full text-left px-5 py-4 rounded-2xl font-bold transition-all flex items-center gap-3 ${
+                activeTab === tab.id ? 'bg-amber-500 text-white shadow-xl' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <span>{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+          <hr className="border-slate-700 my-4" />
+          <button onClick={onExit} className="w-full text-left px-5 py-4 text-slate-400 hover:text-white rounded-2xl transition-all font-bold">
+            ← 返回首頁
+          </button>
         </nav>
       </aside>
 
       <main className="flex-grow p-4 lg:p-12 overflow-y-auto">
         <div className="max-w-6xl mx-auto">
-          <header className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <h2 className="text-4xl font-black text-slate-900 tracking-tight">行程管理</h2>
-              <p className="text-slate-500 mt-2 font-bold">手動新增與管理您的旅遊行程。</p>
-            </div>
-          </header>
-
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
-            {/* 左側：編輯表單 */}
-            <div className="xl:col-span-5">
-              <form onSubmit={handleSave} className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-10 sticky top-8 space-y-8 transition-all">
-
-                <div className="space-y-6">
-                  {/* 行程標題 */}
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">行程標題</label>
-                    <input
-                      type="text"
-                      placeholder="例如：2026 韓國賞櫻五日遊"
-                      className="w-full bg-slate-50 border-none rounded-2xl p-5 text-sm font-black text-slate-700 transition-all focus:ring-2 focus:ring-amber-400"
-                      value={formData.title}
-                      onChange={e => setFormData({ ...formData, title: e.target.value })}
-                    />
-                  </div>
-
-                  {/* 目的地與日期 */}
-                  <div className="grid grid-cols-2 gap-4">
+          {/* Tours Tab */}
+          {activeTab === 'tours' && (
+            <>
+              <header className="mb-12">
+                <h2 className="text-4xl font-black text-slate-900 tracking-tight">行程管理</h2>
+                <p className="text-slate-500 mt-2 font-bold">手動新增與管理您的旅遊行程。</p>
+              </header>
+              <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+                <div className="xl:col-span-5">
+                  <form onSubmit={handleSaveTour} className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-10 sticky top-8 space-y-6">
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">目的地</label>
-                      <input
-                        type="text"
-                        placeholder="例如：韓國"
-                        className="w-full bg-slate-50 border-none rounded-2xl p-5 text-sm font-bold text-slate-600"
-                        value={formData.destination}
-                        onChange={e => setFormData({ ...formData, destination: e.target.value })}
-                      />
+                      <label className={labelClass}>行程標題</label>
+                      <input type="text" placeholder="例如：2026 韓國賞櫻五日遊" className={inputClass} value={tourForm.title} onChange={e => setTourForm({ ...tourForm, title: e.target.value })} />
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">預計出發日</label>
-                      <input
-                        type="date"
-                        className="w-full bg-slate-50 border-none rounded-2xl p-5 text-sm font-bold text-slate-600"
-                        value={formData.departureDate}
-                        onChange={e => setFormData({ ...formData, departureDate: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  {/* 圖片連結 */}
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">圖片連結 (URL)</label>
-                    <input
-                      type="url"
-                      placeholder="請輸入圖片網址..."
-                      className="w-full bg-slate-50 border-none rounded-2xl p-5 text-sm font-bold text-slate-600"
-                      value={formData.image}
-                      onChange={e => setFormData({ ...formData, image: e.target.value })}
-                    />
-                    {formData.image && (
-                      <div className="mt-4 aspect-[16/10] rounded-xl overflow-hidden bg-slate-100">
-                        <img src={formData.image} alt="Preview" className="w-full h-full object-cover" onError={(e) => e.currentTarget.style.display = 'none'} />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className={labelClass}>目的地</label>
+                        <input type="text" placeholder="例如：韓國濟州島" className={inputClass} value={tourForm.destination} onChange={e => setTourForm({ ...tourForm, destination: e.target.value })} />
                       </div>
-                    )}
-                  </div>
-
-                  {/* 行程連結 */}
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">行程 PDF/文件連結</label>
-                    <input
-                      type="url"
-                      placeholder="請輸入 Google Drive 或其他連結..."
-                      className="w-full bg-slate-50 border-none rounded-2xl p-5 text-sm font-bold text-slate-600"
-                      value={formData.itineraryLink}
-                      onChange={e => setFormData({ ...formData, itineraryLink: e.target.value })}
-                    />
-                  </div>
-
-                </div>
-
-                <div className="pt-4">
-                  <button type="submit" className="w-full bg-slate-900 text-white font-black py-6 rounded-[2rem] shadow-2xl shadow-slate-200 hover:bg-black transition-all flex items-center justify-center gap-2 text-lg active:scale-[0.98]">
-                    {editingId ? '儲存變更' : '確認發佈此行程'}
-                  </button>
-                  {editingId && (
-                    <button type="button" onClick={resetForm} className="w-full mt-4 text-slate-400 font-bold text-sm hover:text-slate-600 transition-all">
-                      取消編輯
+                      <div>
+                        <label className={labelClass}>預計出發日</label>
+                        <input type="date" className={inputClass} value={tourForm.departureDate} onChange={e => setTourForm({ ...tourForm, departureDate: e.target.value })} />
+                      </div>
+                    </div>
+                    <div>
+                      <label className={labelClass}>圖片連結 (URL)</label>
+                      <input type="url" placeholder="請輸入圖片網址..." className={inputClass} value={tourForm.image} onChange={e => setTourForm({ ...tourForm, image: e.target.value })} />
+                      {tourForm.image && <div className="mt-4 aspect-[16/10] rounded-xl overflow-hidden bg-slate-100"><img src={tourForm.image} alt="Preview" className="w-full h-full object-cover" onError={(e) => e.currentTarget.style.display = 'none'} /></div>}
+                    </div>
+                    <div>
+                      <label className={labelClass}>行程 PDF/文件連結</label>
+                      <input type="url" placeholder="請輸入 Google Drive 或其他連結..." className={inputClass} value={tourForm.itineraryLink} onChange={e => setTourForm({ ...tourForm, itineraryLink: e.target.value })} />
+                    </div>
+                    <button type="submit" className="w-full bg-slate-900 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-black transition-all">
+                      {tourEditingId ? '儲存變更' : '確認發佈此行程'}
                     </button>
-                  )}
+                    {tourEditingId && <button type="button" onClick={resetTourForm} className="w-full text-slate-400 font-bold text-sm hover:text-slate-600">取消編輯</button>}
+                  </form>
                 </div>
-              </form>
-            </div>
-
-            {/* 右側：行程列表 */}
-            <div className="xl:col-span-7 space-y-6">
-              <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-                <div className="p-8 border-b border-slate-50 bg-slate-50/30 flex justify-between items-center">
-                  <h3 className="font-black text-xs uppercase tracking-widest text-slate-400">當前線上行程 ({tours.length})</h3>
-                </div>
-                <div className="divide-y divide-slate-50 max-h-[700px] overflow-y-auto">
-                  {tours.map(tour => (
-                    <div key={tour.id} className="p-8 hover:bg-slate-50 transition-all flex items-center justify-between group">
-                      <div className="flex items-center gap-6">
-                        <div className="w-24 h-16 rounded-2xl overflow-hidden shadow-md bg-slate-100 shrink-0 border border-slate-200">
-                          <img src={tour.image} className="w-full h-full object-cover" onError={(e) => e.currentTarget.style.opacity = "0.3"} />
-                        </div>
-                        <div>
-                          <h4 className="font-black text-slate-800 text-base line-clamp-1">{tour.title}</h4>
-                          <div className="flex items-center gap-4 mt-2">
-                            <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded-lg font-black uppercase tracking-tighter">{tour.destination}</span>
-                            <span className="text-[10px] text-slate-400 font-bold">{tour.departureDate}</span>
+                <div className="xl:col-span-7">
+                  <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="p-6 border-b border-slate-50 bg-slate-50/30">
+                      <h3 className="font-black text-xs uppercase tracking-widest text-slate-400">當前線上行程 ({tours.length})</h3>
+                    </div>
+                    <div className="divide-y divide-slate-50 max-h-[600px] overflow-y-auto">
+                      {tours.map(tour => (
+                        <div key={tour.id} className="p-6 hover:bg-slate-50 transition-all flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-20 h-14 rounded-xl overflow-hidden bg-slate-100 shrink-0">
+                              <img src={tour.image} className="w-full h-full object-cover" onError={(e) => e.currentTarget.style.opacity = "0.3"} />
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-slate-800 text-sm line-clamp-1">{tour.title}</h4>
+                              <span className="text-xs text-slate-400">{tour.departureDate}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => { setTourEditingId(tour.id); setTourForm(tour); }} className="px-3 py-2 text-amber-600 hover:bg-amber-50 rounded-xl text-xs font-bold">編輯</button>
+                            <button onClick={() => { if (confirm("確定刪除？")) onUpdateTours(tours.filter(t => t.id !== tour.id)) }} className="px-3 py-2 text-slate-300 hover:text-red-500 rounded-xl text-xs font-bold">刪除</button>
+                            <button onClick={() => onSetFeaturedTour(tour.id)} className={`px-3 py-2 rounded-xl text-xs font-bold ${featuredTourId === tour.id ? 'bg-amber-500 text-white' : 'text-slate-300 hover:text-amber-500'}`}>
+                              {featuredTourId === tour.id ? '★' : '☆'}
+                            </button>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-3 transition-all">
-                        <button onClick={() => { setEditingId(tour.id); setFormData(tour); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-3 text-amber-600 hover:bg-amber-50 rounded-xl font-black text-xs">編輯</button>
-                        <button onClick={() => { if (confirm("確定刪除？")) onUpdateTours(tours.filter(t => t.id !== tour.id)) }} className="p-3 text-slate-300 hover:text-red-500 rounded-xl font-black text-xs">刪除</button>
-                        <button
-                          onClick={() => onSetFeaturedTour(tour.id)}
-                          className={`p-3 rounded-xl font-black text-xs transition-all ${featuredTourId === tour.id ? 'bg-amber-500 text-white shadow-lg' : 'text-slate-300 hover:text-amber-500'}`}
-                          title="設為首頁倒數行程"
-                        >
-                          {featuredTourId === tour.id ? '★ 精選中' : '☆ 設為精選'}
-                        </button>
-                      </div>
+                      ))}
+                      {tours.length === 0 && <div className="p-20 text-center text-slate-300 italic">尚未新增任何行程</div>}
                     </div>
-                  ))}
-                  {tours.length === 0 && (
-                    <div className="p-32 text-center text-slate-300 italic font-bold">
-                      尚未匯入任何行程
-                    </div>
-                  )}
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </>
+          )}
+
+          {/* Blog Tab */}
+          {activeTab === 'blog' && (
+            <>
+              <header className="mb-12">
+                <h2 className="text-4xl font-black text-slate-900 tracking-tight">部落格文章</h2>
+                <p className="text-slate-500 mt-2 font-bold">管理 Sunny 的私房推薦文章。</p>
+              </header>
+              <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+                <div className="xl:col-span-5">
+                  <form onSubmit={handleSaveBlog} className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-10 sticky top-8 space-y-6">
+                    <div>
+                      <label className={labelClass}>文章標題</label>
+                      <input type="text" placeholder="例如：韓國行李怎麼帶？" className={inputClass} value={blogForm.title} onChange={e => setBlogForm({ ...blogForm, title: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className={labelClass}>分類</label>
+                      <select className={inputClass} value={blogForm.category} onChange={e => setBlogForm({ ...blogForm, category: e.target.value })}>
+                        <option value="行李攻略">行李攻略</option>
+                        <option value="必買清單">必買清單</option>
+                        <option value="美食推薦">美食推薦</option>
+                        <option value="景點介紹">景點介紹</option>
+                        <option value="交通攻略">交通攻略</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelClass}>內容 (300字內)</label>
+                      <textarea placeholder="分享您的旅遊小撇步..." className={`${inputClass} h-32 resize-none`} maxLength={300} value={blogForm.content} onChange={e => setBlogForm({ ...blogForm, content: e.target.value })} />
+                      <p className="text-xs text-slate-400 mt-1 text-right">{blogForm.content?.length || 0}/300</p>
+                    </div>
+                    <div>
+                      <label className={labelClass}>封面圖片 (URL, 選填)</label>
+                      <input type="url" placeholder="請輸入圖片網址..." className={inputClass} value={blogForm.image} onChange={e => setBlogForm({ ...blogForm, image: e.target.value })} />
+                    </div>
+                    <button type="submit" className="w-full bg-slate-900 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-black transition-all">
+                      {blogEditingId ? '儲存變更' : '發佈文章'}
+                    </button>
+                    {blogEditingId && <button type="button" onClick={resetBlogForm} className="w-full text-slate-400 font-bold text-sm hover:text-slate-600">取消編輯</button>}
+                  </form>
+                </div>
+                <div className="xl:col-span-7">
+                  <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="p-6 border-b border-slate-50 bg-slate-50/30">
+                      <h3 className="font-black text-xs uppercase tracking-widest text-slate-400">已發佈文章 ({blogPosts.length})</h3>
+                    </div>
+                    <div className="divide-y divide-slate-50 max-h-[600px] overflow-y-auto">
+                      {blogPosts.map(post => (
+                        <div key={post.id} className="p-6 hover:bg-slate-50 transition-all flex items-center justify-between">
+                          <div>
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-lg font-bold">{post.category}</span>
+                            <h4 className="font-bold text-slate-800 text-sm mt-2">{post.title}</h4>
+                            <p className="text-xs text-slate-400 mt-1 line-clamp-1">{post.content}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => { setBlogEditingId(post.id); setBlogForm(post); }} className="px-3 py-2 text-amber-600 hover:bg-amber-50 rounded-xl text-xs font-bold">編輯</button>
+                            <button onClick={() => { if (confirm("確定刪除？")) onUpdateBlogPosts(blogPosts.filter(p => p.id !== post.id)) }} className="px-3 py-2 text-slate-300 hover:text-red-500 rounded-xl text-xs font-bold">刪除</button>
+                          </div>
+                        </div>
+                      ))}
+                      {blogPosts.length === 0 && <div className="p-20 text-center text-slate-300 italic">尚未新增任何文章</div>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Testimonials Tab */}
+          {activeTab === 'testimonials' && (
+            <>
+              <header className="mb-12">
+                <h2 className="text-4xl font-black text-slate-900 tracking-tight">旅客評價</h2>
+                <p className="text-slate-500 mt-2 font-bold">管理旅客的真實評價與心得。</p>
+              </header>
+              <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+                <div className="xl:col-span-5">
+                  <form onSubmit={handleSaveTestimonial} className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-10 sticky top-8 space-y-6">
+                    <div>
+                      <label className={labelClass}>旅客姓名</label>
+                      <input type="text" placeholder="例如：王小姐" className={inputClass} value={testimonialForm.name} onChange={e => setTestimonialForm({ ...testimonialForm, name: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className={labelClass}>參加行程</label>
+                      <input type="text" placeholder="例如：濟州島海女遊艇美食團" className={inputClass} value={testimonialForm.tourName} onChange={e => setTestimonialForm({ ...testimonialForm, tourName: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className={labelClass}>一句話心得</label>
+                      <textarea placeholder="旅客的真實感受..." className={`${inputClass} h-24 resize-none`} value={testimonialForm.quote} onChange={e => setTestimonialForm({ ...testimonialForm, quote: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className={labelClass}>評分</label>
+                      <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5].map(star => (
+                          <button key={star} type="button" onClick={() => setTestimonialForm({ ...testimonialForm, rating: star })} className={`text-2xl ${(testimonialForm.rating || 0) >= star ? 'text-amber-400' : 'text-slate-200'}`}>★</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className={labelClass}>旅客照片 (URL, 選填)</label>
+                      <input type="url" placeholder="請輸入照片網址..." className={inputClass} value={testimonialForm.image} onChange={e => setTestimonialForm({ ...testimonialForm, image: e.target.value })} />
+                    </div>
+                    <button type="submit" className="w-full bg-slate-900 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-black transition-all">
+                      {testimonialEditingId ? '儲存變更' : '新增評價'}
+                    </button>
+                    {testimonialEditingId && <button type="button" onClick={resetTestimonialForm} className="w-full text-slate-400 font-bold text-sm hover:text-slate-600">取消編輯</button>}
+                  </form>
+                </div>
+                <div className="xl:col-span-7">
+                  <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="p-6 border-b border-slate-50 bg-slate-50/30">
+                      <h3 className="font-black text-xs uppercase tracking-widest text-slate-400">旅客評價 ({testimonials.length})</h3>
+                    </div>
+                    <div className="divide-y divide-slate-50 max-h-[600px] overflow-y-auto">
+                      {testimonials.map(t => (
+                        <div key={t.id} className="p-6 hover:bg-slate-50 transition-all flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold">
+                              {t.image ? <img src={t.image} className="w-full h-full rounded-full object-cover" /> : t.name.charAt(0)}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-bold text-slate-800 text-sm">{t.name}</h4>
+                                <span className="text-amber-400 text-sm">{'★'.repeat(t.rating)}</span>
+                              </div>
+                              <p className="text-xs text-slate-400">{t.tourName}</p>
+                              <p className="text-xs text-slate-600 mt-1 line-clamp-1">「{t.quote}」</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => { setTestimonialEditingId(t.id); setTestimonialForm(t); }} className="px-3 py-2 text-amber-600 hover:bg-amber-50 rounded-xl text-xs font-bold">編輯</button>
+                            <button onClick={() => { if (confirm("確定刪除？")) onUpdateTestimonials(testimonials.filter(x => x.id !== t.id)) }} className="px-3 py-2 text-slate-300 hover:text-red-500 rounded-xl text-xs font-bold">刪除</button>
+                          </div>
+                        </div>
+                      ))}
+                      {testimonials.length === 0 && <div className="p-20 text-center text-slate-300 italic">尚未新增任何評價</div>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Why Choose Us Tab */}
+          {activeTab === 'whyChooseUs' && (
+            <>
+              <header className="mb-12">
+                <h2 className="text-4xl font-black text-slate-900 tracking-tight">關於我們</h2>
+                <p className="text-slate-500 mt-2 font-bold">管理「為什麼選擇我們」專區的內容。</p>
+              </header>
+              <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+                <div className="xl:col-span-5">
+                  <form onSubmit={handleSaveWhy} className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-10 sticky top-8 space-y-6">
+                    <div>
+                      <label className={labelClass}>標題</label>
+                      <input type="text" placeholder="例如：Sunny 親自帶領" className={inputClass} value={whyForm.title} onChange={e => setWhyForm({ ...whyForm, title: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className={labelClass}>說明</label>
+                      <textarea placeholder="詳細說明這項優勢..." className={`${inputClass} h-32 resize-none`} value={whyForm.description} onChange={e => setWhyForm({ ...whyForm, description: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className={labelClass}>圖示類型</label>
+                      <select className={inputClass} value={whyForm.icon} onChange={e => setWhyForm({ ...whyForm, icon: e.target.value })}>
+                        <option value="leader">👤 領隊/人物</option>
+                        <option value="company">🏠 公司/機構</option>
+                        <option value="custom">🔧 客製化/工具</option>
+                        <option value="safety">🛡️ 安全/保障</option>
+                      </select>
+                    </div>
+                    <button type="submit" className="w-full bg-slate-900 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-black transition-all">
+                      {whyEditingId ? '儲存變更' : '新增項目'}
+                    </button>
+                    {whyEditingId && <button type="button" onClick={resetWhyForm} className="w-full text-slate-400 font-bold text-sm hover:text-slate-600">取消編輯</button>}
+                  </form>
+                </div>
+                <div className="xl:col-span-7">
+                  <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="p-6 border-b border-slate-50 bg-slate-50/30">
+                      <h3 className="font-black text-xs uppercase tracking-widest text-slate-400">優勢項目 ({whyChooseUs.length})</h3>
+                    </div>
+                    <div className="divide-y divide-slate-50 max-h-[600px] overflow-y-auto">
+                      {whyChooseUs.map(item => (
+                        <div key={item.id} className="p-6 hover:bg-slate-50 transition-all flex items-center justify-between">
+                          <div>
+                            <h4 className="font-bold text-slate-800 text-sm">{item.title}</h4>
+                            <p className="text-xs text-slate-500 mt-1 line-clamp-2">{item.description}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => { setWhyEditingId(item.id); setWhyForm(item); }} className="px-3 py-2 text-amber-600 hover:bg-amber-50 rounded-xl text-xs font-bold">編輯</button>
+                            <button onClick={() => { if (confirm("確定刪除？")) onUpdateWhyChooseUs(whyChooseUs.filter(w => w.id !== item.id)) }} className="px-3 py-2 text-slate-300 hover:text-red-500 rounded-xl text-xs font-bold">刪除</button>
+                          </div>
+                        </div>
+                      ))}
+                      {whyChooseUs.length === 0 && <div className="p-20 text-center text-slate-300 italic">尚未新增任何項目</div>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </main>
     </div>

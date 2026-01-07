@@ -5,13 +5,14 @@ import Hero from './components/Hero';
 import TourCard from './components/TourCard';
 import WeatherOutfit from './components/WeatherOutfit';
 import FilterBar from './components/FilterBar';
-
-
+import WhyChooseUs from './components/WhyChooseUs';
+import BlogSection from './components/BlogSection';
+import Testimonials from './components/Testimonials';
 
 import AdminPanel from './components/AdminPanel';
 import AdminLogin from './components/AdminLogin';
-import { MOCK_TOURS, SUNNY_CONTACTS } from './constants';
-import { Tour } from './types';
+import { MOCK_TOURS, MOCK_BLOG_POSTS, MOCK_TESTIMONIALS, MOCK_WHY_CHOOSE_US, SUNNY_CONTACTS } from './constants';
+import { Tour, BlogPost, Testimonial, WhyChooseUsItem } from './types';
 
 
 const App: React.FC = () => {
@@ -19,6 +20,9 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const [tours, setTours] = useState<Tour[]>([]);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [whyChooseUs, setWhyChooseUs] = useState<WhyChooseUsItem[]>([]);
   const [filters, setFilters] = useState({
     departureCity: '',
     destination: '',
@@ -28,6 +32,8 @@ const App: React.FC = () => {
   const heroRef = useRef<HTMLDivElement>(null);
   const servicesRef = useRef<HTMLDivElement>(null);
   const toursRef = useRef<HTMLDivElement>(null);
+  const blogRef = useRef<HTMLDivElement>(null);
+  const testimonialsRef = useRef<HTMLDivElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
 
 
@@ -61,6 +67,33 @@ const App: React.FC = () => {
       localStorage.setItem('sunny_tours_v4', JSON.stringify(MOCK_TOURS));
     }
 
+    // Load blog posts
+    const savedBlogPosts = localStorage.getItem('sunny_blog_posts');
+    if (savedBlogPosts) {
+      setBlogPosts(JSON.parse(savedBlogPosts));
+    } else {
+      setBlogPosts(MOCK_BLOG_POSTS);
+      localStorage.setItem('sunny_blog_posts', JSON.stringify(MOCK_BLOG_POSTS));
+    }
+
+    // Load testimonials
+    const savedTestimonials = localStorage.getItem('sunny_testimonials');
+    if (savedTestimonials) {
+      setTestimonials(JSON.parse(savedTestimonials));
+    } else {
+      setTestimonials(MOCK_TESTIMONIALS);
+      localStorage.setItem('sunny_testimonials', JSON.stringify(MOCK_TESTIMONIALS));
+    }
+
+    // Load why choose us
+    const savedWhyChooseUs = localStorage.getItem('sunny_why_choose_us');
+    if (savedWhyChooseUs) {
+      setWhyChooseUs(JSON.parse(savedWhyChooseUs));
+    } else {
+      setWhyChooseUs(MOCK_WHY_CHOOSE_US);
+      localStorage.setItem('sunny_why_choose_us', JSON.stringify(MOCK_WHY_CHOOSE_US));
+    }
+
     const savedFeaturedId = localStorage.getItem('sunny_featured_tour_id');
     if (savedFeaturedId) {
       setFeaturedTourId(savedFeaturedId);
@@ -89,8 +122,9 @@ const App: React.FC = () => {
       hero: heroRef,
       services: servicesRef,
       tours: toursRef,
+      blog: blogRef,
+      testimonials: testimonialsRef,
       feed: feedRef,
-
     };
     refs[section]?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -98,6 +132,21 @@ const App: React.FC = () => {
   const updateTours = (newTours: Tour[]) => {
     setTours(newTours);
     localStorage.setItem('sunny_tours_v4', JSON.stringify(newTours));
+  };
+
+  const updateBlogPosts = (newPosts: BlogPost[]) => {
+    setBlogPosts(newPosts);
+    localStorage.setItem('sunny_blog_posts', JSON.stringify(newPosts));
+  };
+
+  const updateTestimonials = (newTestimonials: Testimonial[]) => {
+    setTestimonials(newTestimonials);
+    localStorage.setItem('sunny_testimonials', JSON.stringify(newTestimonials));
+  };
+
+  const updateWhyChooseUs = (newItems: WhyChooseUsItem[]) => {
+    setWhyChooseUs(newItems);
+    localStorage.setItem('sunny_why_choose_us', JSON.stringify(newItems));
   };
 
   const handleSetFeaturedTour = (id: string) => {
@@ -151,6 +200,12 @@ const App: React.FC = () => {
       <AdminPanel
         tours={tours}
         onUpdateTours={updateTours}
+        blogPosts={blogPosts}
+        onUpdateBlogPosts={updateBlogPosts}
+        testimonials={testimonials}
+        onUpdateTestimonials={updateTestimonials}
+        whyChooseUs={whyChooseUs}
+        onUpdateWhyChooseUs={updateWhyChooseUs}
         onExit={handleAdminExit}
         featuredTourId={featuredTourId}
         onSetFeaturedTour={handleSetFeaturedTour}
@@ -176,6 +231,9 @@ const App: React.FC = () => {
           <section className="mt-8 mb-24">
             <WeatherOutfit />
           </section>
+
+          <WhyChooseUs items={whyChooseUs} />
+
           <section ref={servicesRef} className="mb-24 mt-12">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">服務內容與流程</h2>
@@ -194,6 +252,10 @@ const App: React.FC = () => {
               <img src="/images/services/flight_hotel.jpg" alt="韓國機加酒自由行：詢價前置作業" className="w-full h-auto object-cover" />
             </div>
           </section>
+
+          <div ref={blogRef}>
+            <BlogSection posts={blogPosts} />
+          </div>
 
           <section ref={toursRef} className="mt-12">
             <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
@@ -227,7 +289,9 @@ const App: React.FC = () => {
             </div>
           </section>
 
-
+          <div ref={testimonialsRef}>
+            <Testimonials testimonials={testimonials} />
+          </div>
 
           <section ref={feedRef} className="mt-32">
             <h2 className="text-3xl font-bold text-gray-900 mb-10">如何找到Sunny</h2>

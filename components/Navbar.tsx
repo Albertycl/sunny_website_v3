@@ -19,9 +19,11 @@ const Navbar: React.FC<NavbarProps> = ({ onNavClick }) => {
             </div>
           </div>
 
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-6">
             <button onClick={() => onNavClick('services')} className="text-gray-600 hover:text-amber-500 font-medium transition-colors text-sm">服務介紹</button>
             <button onClick={() => onNavClick('tours')} className="text-gray-600 hover:text-amber-500 font-medium transition-colors text-sm">尋找團體</button>
+            <button onClick={() => onNavClick('blog')} className="text-gray-600 hover:text-amber-500 font-medium transition-colors text-sm">私房推薦</button>
+            <button onClick={() => onNavClick('testimonials')} className="text-gray-600 hover:text-amber-500 font-medium transition-colors text-sm">旅客評價</button>
             <button onClick={() => onNavClick('feed')} className="text-gray-600 hover:text-amber-500 font-medium transition-colors text-sm">如何找到Sunny</button>
             <a href="https://weather-advice-8kr4.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-amber-500 font-medium transition-colors text-sm flex items-center gap-1">
               <span>☁️</span> 天氣小幫手

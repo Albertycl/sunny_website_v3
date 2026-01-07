@@ -1,5 +1,5 @@
 
-import { Tour } from './types';
+import { Tour, BlogPost, Testimonial, WhyChooseUsItem } from './types';
 
 export const SUNNY_CONTACTS = {
   facebook: 'https://www.facebook.com/sunnyvisitkorea/',
@@ -48,6 +48,77 @@ export const MOCK_TOURS: Tour[] = [
   }
 ];
 
+export const MOCK_WHY_CHOOSE_US: WhyChooseUsItem[] = [
+  {
+    id: 'why-1',
+    title: 'Sunny 親自帶領',
+    description: '專業導遊經驗豐富，全程中文服務，帶您深入體驗韓國文化與美食。',
+    icon: 'leader'
+  },
+  {
+    id: 'why-2',
+    title: '百威旅行社保障',
+    description: '與老牌旅行社合作，行程安全有保障，讓您安心出遊無後顧之憂。',
+    icon: 'company'
+  },
+  {
+    id: 'why-3',
+    title: '客製化行程規劃',
+    description: '依據您的需求與預算，量身打造專屬行程，彈性調整最適合您。',
+    icon: 'custom'
+  }
+];
 
+export const MOCK_BLOG_POSTS: BlogPost[] = [
+  {
+    id: 'blog-1',
+    title: '韓國行李怎麼帶？',
+    content: '韓國四季分明，行李準備大不同！春秋建議帶薄外套，夏天防曬必備，冬天保暖衣物不可少。記得預留購物空間，韓國好買程度超乎想像！',
+    category: '行李攻略',
+    image: '',
+    publishDate: '2024-01-15'
+  },
+  {
+    id: 'blog-2',
+    title: '首爾必買伴手禮清單',
+    content: '韓國零食、美妝、文創小物都是送禮首選！推薦蜂蜜奶油杏仁果、韓國面膜、Line Friends 周邊，還有傳統工藝品也很有紀念價值。',
+    category: '必買清單',
+    image: '',
+    publishDate: '2024-01-20'
+  },
+  {
+    id: 'blog-3',
+    title: '濟州島隱藏美食推薦',
+    content: '除了黑豬肉和海鮮，濟州島還有很多在地人才知道的美食！像是花生冰淇淋、橘子巧克力、鮑魚粥，都是必嚐的道地風味。',
+    category: '美食推薦',
+    image: '',
+    publishDate: '2024-02-01'
+  }
+];
 
-
+export const MOCK_TESTIMONIALS: Testimonial[] = [
+  {
+    id: 'testimonial-1',
+    name: '王小姐',
+    tourName: '濟州島海女遊艇美食團',
+    quote: 'Sunny 超用心！行程安排得很棒，吃得好玩得開心，下次還要再跟團！',
+    image: '',
+    rating: 5
+  },
+  {
+    id: 'testimonial-2',
+    name: '林先生',
+    tourName: '釜山美食美景團',
+    quote: '第一次跟團去韓國，完全不用擔心語言問題，Sunny 全程照顧得很好。',
+    image: '',
+    rating: 5
+  },
+  {
+    id: 'testimonial-3',
+    name: '陳太太',
+    tourName: '濟州島賞櫻團',
+    quote: '櫻花真的美翻了！感謝 Sunny 帶我們去私房景點，照片拍到手軟！',
+    image: '',
+    rating: 5
+  }
+];
